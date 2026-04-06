@@ -1,0 +1,11 @@
+/* Responsive utilities for perfect single-window layouts */
+@media (min-width: 768px) {
+  .h-md-100 {
+    height: 100% !important;
+  }
+}
+
+/* Ensure no global horizontal scrollbar occurs anywhere */
+body {
+  overflow-x: hidden;
+}
