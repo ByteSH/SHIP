@@ -8,6 +8,7 @@ import com.connect.SHIP_ADMIN.repository.OtpRepository;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +22,7 @@ public class OtpService {
 
     private final OtpRepository otpRepository;
     private final EmailService emailService;
+    private final PasswordEncoder passwordEncoder;
 
     @Value("${app.otp.expiry-minutes}")
     private int otpExpiryMinutes;
@@ -29,12 +31,14 @@ public class OtpService {
     @Transactional
     public void generateAndSendOtp(String username, String email) {
         otpRepository.deleteByUsername(username);
+        otpRepository.flush();
 
         String otp = generateOtp();
+        String hashedOtp = passwordEncoder.encode(otp);
 
         OtpEntity otpEntity = OtpEntity.builder()
                 .username(username)
-                .otp(otp)
+                .otp(hashedOtp)
                 .expiryTime(LocalDateTime.now().plusMinutes(otpExpiryMinutes))
                 .createdAt(LocalDateTime.now())
                 .build();
@@ -49,6 +53,7 @@ public class OtpService {
     }
 
 
+    @Transactional
     public void validateOtp(String username, String otp) {
         Optional<OtpEntity> otpEntityOpt = otpRepository.findByUsername(username);
 
@@ -68,7 +73,7 @@ public class OtpService {
             throw new OtpMaxAttemptsException();
         }
 
-        if (!otpEntity.getOtp().equals(otp)) {
+        if (!passwordEncoder.matches(otp, otpEntity.getOtp())) {
             otpEntity.setAttempts(otpEntity.getAttempts() + 1);
             otpRepository.save(otpEntity);
             throw new OtpInvalidException();
