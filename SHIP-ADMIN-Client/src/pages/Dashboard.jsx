@@ -157,6 +157,30 @@ const Dashboard = () => {
                   <span className="fw-bold text-center" style={{ fontSize: '0.75rem', color: '#A3AED0' }}>Get Product</span>
                 </div>
               </div>
+              {/* Add Category/Product Button */}
+              <div className="col-4">
+                <div
+                  className="d-flex flex-column align-items-center justify-content-center w-100"
+                  style={{
+                    cursor: 'pointer',
+                    backgroundColor: '#FFFFFF',
+                    border: '1px solid #E9EDF7',
+                    borderRadius: '20px',
+                    height: '100px',
+                    transition: 'all 0.3s ease',
+                    transform: isHovered === 'addProductCategory' ? 'translateY(-4px)' : 'none',
+                    boxShadow: isHovered === 'addProductCategory' ? '0px 12px 25px rgba(112, 144, 176, 0.15)' : '0px 4px 10px rgba(112, 144, 176, 0.05)'
+                  }}
+                  onClick={() => navigate('/add-product-category')}
+                  onMouseEnter={() => setIsHovered('addProductCategory')}
+                  onMouseLeave={() => setIsHovered(null)}
+                >
+                  <div className="rounded-circle mb-2 d-flex justify-content-center align-items-center" style={{ width: '38px', height: '38px', backgroundColor: '#F4F7FE' }}>
+                    <i className="bi bi-tag-fill" style={{ color: '#4318FF', fontSize: '1rem', fontWeight: 'bold' }}></i>
+                  </div>
+                  <span className="fw-bold text-center" style={{ fontSize: '0.75rem', color: '#A3AED0' }}>Add Cat/Prod</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>

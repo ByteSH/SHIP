@@ -5,6 +5,7 @@ import CreateUser from "./pages/CreateUser";
 import EditUser from "./pages/EditUser";
 import GetUser from "./pages/GetUser";
 import Product from "./pages/Product";
+import AddProductCategory from "./pages/AddProductCategory";
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
         <Route path="/edit-user/:username?" element={<EditUser/>} />
         <Route path="/get-user" element={<GetUser/>} />
         <Route path="/get-product" element={<Product/>} />
+        <Route path="/add-product-category" element={<AddProductCategory/>} />
       </Routes>
     </Router>
   );
