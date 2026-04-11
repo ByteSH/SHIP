@@ -39,3 +39,11 @@ app:
       passwords: ${ADMIN_PASSWORDS}
   otp:
     expiry-minutes: ${OTP_EXPIRY_MINUTES:5}
+
+supabase:
+  s3:
+    endpoint: ${SUPABASE_S3_ENDPOINT}
+    region: ${SUPABASE_S3_REGION}
+    access-key: ${SUPABASE_S3_ACCESS_KEY}
+    secret-key: ${SUPABASE_S3_SECRET_KEY}
+    bucket-name: ${SUPABASE_S3_BUCKET}
