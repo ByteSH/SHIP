@@ -28,32 +28,43 @@ public class ProductService {
         List<ProductEntity> products = productRepository.findByCategory(category);
 
         return products.stream().map(product -> {
-
             List<String> images = productImageRepository.findByUniqueId(product.getUniqueId())
                     .stream()
                     .map(ProductImageEntity::getImagePath)
                     .collect(Collectors.toList());
 
-            return ProductDetailsResponse.builder()
-                    .uniqueId(product.getUniqueId())
-                    .productName(product.getProductName())
-                    .companyName(product.getCompanyName())
-                    .category(product.getCategory())
-                    .subCategory(product.getSubCategory())
-                    .unit(product.getUnit())
-                    .value(product.getValue())
-                    .mrp(product.getMrp())
-                    .sellerMrp(product.getSellerMrp())
-                    .purchaseMrp(product.getPurchaseMrp())
-                    .images(images)
-                    .build();
+            return mapToResponse(product, images);
         }).collect(Collectors.toList());
     }
 
+    private String generateUniqueId(String companyName, String productName, String valueUnit, Integer mrp) {
+        String cleanCompany = cleanString(companyName);
+        String cleanProduct = cleanString(productName);
+        String cleanUnit = cleanString(valueUnit);
 
+        return String.format("%s_%s_%s_%s",
+                        cleanCompany,
+                        cleanProduct,
+                        cleanUnit,
+                        mrp)
+                .toUpperCase();
+    }
+
+    private String cleanString(String input) {
+        if (input == null) return "";
+        return input.trim()
+                .replaceAll("[^a-zA-Z0-9 ]", "")
+                .replaceAll("\\s+", "_");
+    }
 
     @Transactional
     public ProductDetailsResponse addProduct(ProductEntity productData, MultipartFile[] images) throws IOException {
+
+        String generatedId = generateUniqueId(productData.getCompanyName(),
+                productData.getProductName(),
+                productData.getValueUnit(),
+                productData.getMrp());
+        productData.setUniqueId(generatedId);
 
         ProductEntity savedProduct = productRepository.save(productData);
         List<String> uploadedUrls = new ArrayList<>();
@@ -72,50 +83,42 @@ public class ProductService {
             productImageRepository.save(imageEntity);
         }
 
-        return ProductDetailsResponse.builder()
-                .uniqueId(savedProduct.getUniqueId())
-                .productName(savedProduct.getProductName())
-                .companyName(savedProduct.getCompanyName())
-                .category(savedProduct.getCategory())
-                .subCategory(savedProduct.getSubCategory())
-                .unit(savedProduct.getUnit())
-                .value(savedProduct.getValue())
-                .mrp(savedProduct.getMrp())
-                .sellerMrp(savedProduct.getSellerMrp())
-                .purchaseMrp(savedProduct.getPurchaseMrp())
-                .images(uploadedUrls)
-                .build();
+        return mapToResponse(savedProduct, uploadedUrls);
     }
-
 
     @Transactional
     public ProductDetailsResponse addProductWithUrls(ProductRequestDTO dto) {
+
+        String generatedId = generateUniqueId(dto.getCompanyName(),
+                dto.getProductName(),
+                dto.getValueUnit(),
+                dto.getMrp());
+
         ProductEntity product = ProductEntity.builder()
-                .uniqueId(dto.getUniqueId())
+                .uniqueId(generatedId)
                 .category(dto.getCategory())
                 .subCategory(dto.getSubCategory())
                 .productName(dto.getProductName())
                 .companyName(dto.getCompanyName())
-                .unit(dto.getUnit())
-                .value(dto.getValue())
+                .valueUnit(dto.getValueUnit())
                 .mrp(dto.getMrp())
                 .sellerMrp(dto.getSellerMrp())
                 .purchaseMrp(dto.getPurchaseMrp())
                 .build();
 
-        productRepository.save(product);
+        ProductEntity savedProduct = productRepository.save(product);
 
         for (int i = 0; i < dto.getImageUrls().size(); i++) {
             ProductImageEntity imageEntity = ProductImageEntity.builder()
-                    .uniqueId(dto.getUniqueId())
-                    .category(dto.getCategory())
+                    .uniqueId(savedProduct.getUniqueId())
+                    .category(savedProduct.getCategory())
                     .imagePath(dto.getImageUrls().get(i))
                     .isPrimary(i == 0)
                     .build();
             productImageRepository.save(imageEntity);
         }
 
-        return mapToResponse(product, dto.getImageUrls());
+        return mapToResponse(savedProduct, dto.getImageUrls());
     }
 
     private ProductDetailsResponse mapToResponse(ProductEntity product, List<String> images) {
@@ -125,8 +128,7 @@ public class ProductService {
                 .subCategory(product.getSubCategory())
                 .productName(product.getProductName())
                 .companyName(product.getCompanyName())
-                .unit(product.getUnit())
-                .value(product.getValue())
+                .valueUnit(product.getValueUnit())
                 .mrp(product.getMrp())
                 .sellerMrp(product.getSellerMrp())
                 .purchaseMrp(product.getPurchaseMrp())

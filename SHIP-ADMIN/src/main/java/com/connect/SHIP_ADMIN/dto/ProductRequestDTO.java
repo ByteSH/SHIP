@@ -11,8 +11,7 @@ public class ProductRequestDTO {
     private String subCategory;
     private String productName;
     private String companyName;
-    private String unit;
-    private Integer value;
+    private String valueUnit;
     private Integer mrp;
     private Integer sellerMrp;
     private Integer purchaseMrp;

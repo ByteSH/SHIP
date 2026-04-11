@@ -25,8 +25,7 @@ public class ProductEntity {
     @Column(name = "company_name")
     private String companyName;
 
-    private String unit;
-    private Integer value;
+    private String valueUnit;
     private Integer mrp;
     private Integer sellerMrp;
 
