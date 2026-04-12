@@ -5,11 +5,13 @@ import com.connect.SHIP_ADMIN.dto.AdminUserResponse;
 import com.connect.SHIP_ADMIN.dto.AdminUserUpdateRequest;
 import com.connect.SHIP_ADMIN.entity.AdminUserEntity;
 import com.connect.SHIP_ADMIN.repository.AdminUserRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -125,6 +127,12 @@ public class AdminUserService {
         return mapToResponse(saved);
     }
 
+    public List<AdminUserResponse> getAllAdminUsers() {
+        return adminUserRepository.findAll().stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
     public AdminUserResponse getAdminUser(String username) {
         AdminUserEntity entity = adminUserRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("USER_NOT_FOUND"));
@@ -145,5 +153,17 @@ public class AdminUserService {
                 .createdAt(e.getCreatedAt())
                 .updatedAt(e.getUpdatedAt())
                 .build();
+    }
+
+
+    @Transactional
+    public void deleteAdminUser(String username) {
+        // 1. Check karein ki user exist karta hai ya nahi
+        if (!adminUserRepository.existsByUsername(username)) {
+            throw new RuntimeException("Admin user not found with username: " + username);
+        }
+
+        // 2. Delete karein
+        adminUserRepository.deleteByUsername(username);
     }
 }

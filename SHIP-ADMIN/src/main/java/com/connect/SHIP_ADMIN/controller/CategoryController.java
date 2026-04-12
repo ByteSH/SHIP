@@ -38,4 +38,21 @@ public class CategoryController {
             @RequestParam String imageUrl) {
         return ResponseEntity.ok(categoryService.addCategoryWithUrl(category, imageUrl));
     }
+
+
+    @PutMapping("/edit/{oldName}")
+    public ResponseEntity<CategoryImageResponse> updateCategory(
+            @PathVariable String oldName,
+            @RequestParam String newCategoryName,
+            @RequestParam String newImageUrl) {
+
+        return ResponseEntity.ok(categoryService.updateCategory(oldName, newCategoryName, newImageUrl));
+    }
+
+    @DeleteMapping("/delete/{categoryName}")
+    public ResponseEntity<String> deleteCategory(@PathVariable String categoryName) {
+        categoryService.deleteCategory(categoryName);
+        return ResponseEntity.ok("Category '" + categoryName + "' deleted successfully.");
+    }
+
 }

@@ -3,6 +3,7 @@ package com.connect.SHIP_ADMIN.service;
 import com.connect.SHIP_ADMIN.dto.CategoryImageResponse;
 import com.connect.SHIP_ADMIN.entity.CategoryImageEntity;
 import com.connect.SHIP_ADMIN.repository.CategoryImageRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -58,5 +59,32 @@ public class CategoryService {
                 .category(entity.getCategory())
                 .imagePath(entity.getImagePath())
                 .build();
+    }
+
+
+    @Transactional
+    public CategoryImageResponse updateCategory(String oldCategoryName, String newCategoryName, String newImageUrl) {
+        // 1. Purani category dhundna
+        CategoryImageEntity existingCategory = categoryImageRepository.findByCategory(oldCategoryName)
+                .orElseThrow(() -> new RuntimeException("Category not found: " + oldCategoryName));
+
+        // 2. Details update karna
+        existingCategory.setCategory(newCategoryName);
+        existingCategory.setImagePath(newImageUrl);
+
+        categoryImageRepository.save(existingCategory);
+
+        return CategoryImageResponse.builder()
+                .category(existingCategory.getCategory())
+                .imagePath(existingCategory.getImagePath())
+                .build();
+    }
+
+    @Transactional
+    public void deleteCategory(String categoryName) {
+        if (!categoryImageRepository.existsByCategory(categoryName)) {
+            throw new RuntimeException("Category not found: " + categoryName);
+        }
+        categoryImageRepository.deleteByCategory(categoryName);
     }
 }

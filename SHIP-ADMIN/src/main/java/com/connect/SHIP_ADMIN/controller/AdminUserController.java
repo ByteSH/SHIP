@@ -10,6 +10,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/admin/users")
 @RequiredArgsConstructor
@@ -32,9 +34,20 @@ public class AdminUserController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping
+    public ResponseEntity<List<AdminUserResponse>> getAllAdminUsers() {
+        return ResponseEntity.ok(adminUserService.getAllAdminUsers());
+    }
+
     @GetMapping("/{username}")
     public ResponseEntity<AdminUserResponse> getAdminUser(@PathVariable String username) {
         AdminUserResponse response = adminUserService.getAdminUser(username);
         return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{username}")
+    public ResponseEntity<String> deleteAdminUser(@PathVariable String username) {
+        adminUserService.deleteAdminUser(username);
+        return ResponseEntity.ok("Admin user '" + username + "' deleted successfully.");
     }
 }

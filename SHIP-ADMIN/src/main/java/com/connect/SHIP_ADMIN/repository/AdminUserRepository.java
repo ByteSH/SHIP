@@ -11,4 +11,5 @@ public interface AdminUserRepository extends JpaRepository<AdminUserEntity, Long
     Optional<AdminUserEntity> findByUsername(String username);
     boolean existsByUsername(String username);
     boolean existsByEmail(String email);
+    void deleteByUsername(String username);
 }
