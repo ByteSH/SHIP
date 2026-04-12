@@ -37,4 +37,19 @@ public class ProductController {
     public ResponseEntity<ProductDetailsResponse> addProductWithUrls(@RequestBody ProductRequestDTO dto) {
         return ResponseEntity.ok(productService.addProductWithUrls(dto));
     }
+
+    @DeleteMapping("/delete/{uniqueId}")
+    public ResponseEntity<String> deleteProduct(@PathVariable String uniqueId) {
+        productService.deleteProductByUniqueId(uniqueId);
+        return ResponseEntity.ok("Product with ID " + uniqueId + " deleted successfully.");
+    }
+
+
+    @PutMapping("/edit/{uniqueId}")
+    public ResponseEntity<ProductDetailsResponse> updateProduct(
+            @PathVariable String uniqueId,
+            @RequestBody ProductRequestDTO dto) {
+
+        return ResponseEntity.ok(productService.updateProductWithUrls(uniqueId, dto));
+    }
 }

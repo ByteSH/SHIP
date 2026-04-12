@@ -14,6 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -134,5 +135,106 @@ public class ProductService {
                 .purchaseMrp(product.getPurchaseMrp())
                 .images(images)
                 .build();
+    }
+
+
+    @Transactional
+    public void deleteProductByUniqueId(String uniqueId) {
+        List<ProductImageEntity> images = productImageRepository.findByUniqueId(uniqueId);
+
+        for (ProductImageEntity image : images) {
+            try {
+                storageService.deleteFile(image.getImagePath());
+            } catch (Exception e) {
+                System.out.println("Error deleting from Supabase: " + e.getMessage());
+            }
+        }
+        productImageRepository.deleteByUniqueId(uniqueId);
+        productRepository.deleteByUniqueId(uniqueId);
+    }
+
+
+    @Transactional
+    public ProductDetailsResponse updateProduct(String uniqueId, ProductEntity updatedData, MultipartFile[] newImages) throws IOException {
+        ProductEntity existingProduct = productRepository.findByUniqueId(uniqueId)
+                .orElseThrow(() -> new RuntimeException("Product not found with ID: " + uniqueId));
+
+        existingProduct.setProductName(updatedData.getProductName());
+        existingProduct.setCompanyName(updatedData.getCompanyName());
+        existingProduct.setCategory(updatedData.getCategory());
+        existingProduct.setSubCategory(updatedData.getSubCategory());
+        existingProduct.setValueUnit(updatedData.getValueUnit());
+        existingProduct.setMrp(updatedData.getMrp());
+        existingProduct.setSellerMrp(updatedData.getSellerMrp());
+        existingProduct.setPurchaseMrp(updatedData.getPurchaseMrp());
+
+        if (newImages != null && newImages.length > 0) {
+            deleteOldImages(uniqueId);
+
+            List<String> newUrls = new ArrayList<>();
+            for (int i = 0; i < newImages.length; i++) {
+                String url = storageService.uploadFile(newImages[i], "products");
+                newUrls.add(url);
+
+                ProductImageEntity imgEntity = ProductImageEntity.builder()
+                        .uniqueId(uniqueId)
+                        .category(existingProduct.getCategory())
+                        .imagePath(url)
+                        .isPrimary(i == 0)
+                        .build();
+                productImageRepository.save(imgEntity);
+            }
+        }
+
+        productRepository.save(existingProduct);
+
+        List<String> currentImages = productImageRepository.findByUniqueId(uniqueId)
+                .stream().map(ProductImageEntity::getImagePath).collect(Collectors.toList());
+
+        return mapToResponse(existingProduct, currentImages);
+    }
+
+    private void deleteOldImages(String uniqueId) {
+        List<ProductImageEntity> oldImages = productImageRepository.findByUniqueId(uniqueId);
+        for (ProductImageEntity img : oldImages) {
+            storageService.deleteFile(img.getImagePath());
+        }
+        productImageRepository.deleteByUniqueId(uniqueId);
+    }
+
+
+
+
+    @Transactional
+    public ProductDetailsResponse updateProductWithUrls(String uniqueId, ProductRequestDTO dto) {
+        ProductEntity existingProduct = productRepository.findByUniqueId(uniqueId)
+                .orElseThrow(() -> new RuntimeException("Product not found with ID: " + uniqueId));
+
+        existingProduct.setProductName(dto.getProductName());
+        existingProduct.setCompanyName(dto.getCompanyName());
+        existingProduct.setCategory(dto.getCategory());
+        existingProduct.setSubCategory(dto.getSubCategory());
+        existingProduct.setValueUnit(dto.getValueUnit());
+        existingProduct.setMrp(dto.getMrp());
+        existingProduct.setSellerMrp(dto.getSellerMrp());
+        existingProduct.setPurchaseMrp(dto.getPurchaseMrp());
+
+        if (dto.getImageUrls() != null && !dto.getImageUrls().isEmpty()) {
+            productImageRepository.deleteByUniqueId(uniqueId);
+
+            for (int i = 0; i < dto.getImageUrls().size(); i++) {
+                ProductImageEntity imgEntity = ProductImageEntity.builder()
+                        .uniqueId(uniqueId)
+                        .category(existingProduct.getCategory())
+                        .imagePath(dto.getImageUrls().get(i))
+                        .isPrimary(i == 0)
+                        .build();
+                productImageRepository.save(imgEntity);
+            }
+        }
+
+        productRepository.save(existingProduct);
+
+        return mapToResponse(existingProduct, dto.getImageUrls());
     }
 }

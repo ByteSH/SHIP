@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface ProductImageRepository extends JpaRepository<ProductImageEntity, Long> {
     List<ProductImageEntity> findByUniqueId(String uniqueId);
+
+    void deleteByUniqueId(String uniqueId);
 }
