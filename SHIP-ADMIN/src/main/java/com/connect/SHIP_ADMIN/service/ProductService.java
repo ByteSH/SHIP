@@ -10,11 +10,9 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -59,16 +57,30 @@ public class ProductService {
     }
 
     @Transactional
-    public ProductDetailsResponse addProduct(ProductEntity productData, MultipartFile[] images) throws IOException {
+    public ProductDetailsResponse addProduct(ProductRequestDTO dto, MultipartFile[] images) throws IOException {
 
-        String generatedId = generateUniqueId(productData.getCompanyName(),
-                productData.getProductName(),
-                productData.getValueUnit(),
-                productData.getMrp());
-        productData.setUniqueId(generatedId);
+        String generatedId = generateUniqueId(dto.getCompanyName(),
+                dto.getProductName(),
+                dto.getValueUnit(),
+                dto.getMrp());
 
-        ProductEntity savedProduct = productRepository.save(productData);
+
+        ProductEntity productEntity = ProductEntity.builder()
+                .uniqueId(generatedId)
+                .category(dto.getCategory())
+                .subCategory(dto.getSubCategory())
+                .productName(dto.getProductName())
+                .companyName(dto.getCompanyName())
+                .valueUnit(dto.getValueUnit())
+                .mrp(dto.getMrp())
+                .sellerMrp(dto.getSellerMrp())
+                .purchaseMrp(dto.getPurchaseMrp())
+                .build();
+
+
+        ProductEntity savedProduct = productRepository.save(productEntity);
         List<String> uploadedUrls = new ArrayList<>();
+
 
         for (int i = 0; i < images.length; i++) {
             String url = storageService.uploadFile(images[i], "products");
@@ -86,6 +98,8 @@ public class ProductService {
 
         return mapToResponse(savedProduct, uploadedUrls);
     }
+
+
 
     @Transactional
     public ProductDetailsResponse addProductWithUrls(ProductRequestDTO dto) {
@@ -152,57 +166,6 @@ public class ProductService {
         productImageRepository.deleteByUniqueId(uniqueId);
         productRepository.deleteByUniqueId(uniqueId);
     }
-
-
-    @Transactional
-    public ProductDetailsResponse updateProduct(String uniqueId, ProductEntity updatedData, MultipartFile[] newImages) throws IOException {
-        ProductEntity existingProduct = productRepository.findByUniqueId(uniqueId)
-                .orElseThrow(() -> new RuntimeException("Product not found with ID: " + uniqueId));
-
-        existingProduct.setProductName(updatedData.getProductName());
-        existingProduct.setCompanyName(updatedData.getCompanyName());
-        existingProduct.setCategory(updatedData.getCategory());
-        existingProduct.setSubCategory(updatedData.getSubCategory());
-        existingProduct.setValueUnit(updatedData.getValueUnit());
-        existingProduct.setMrp(updatedData.getMrp());
-        existingProduct.setSellerMrp(updatedData.getSellerMrp());
-        existingProduct.setPurchaseMrp(updatedData.getPurchaseMrp());
-
-        if (newImages != null && newImages.length > 0) {
-            deleteOldImages(uniqueId);
-
-            List<String> newUrls = new ArrayList<>();
-            for (int i = 0; i < newImages.length; i++) {
-                String url = storageService.uploadFile(newImages[i], "products");
-                newUrls.add(url);
-
-                ProductImageEntity imgEntity = ProductImageEntity.builder()
-                        .uniqueId(uniqueId)
-                        .category(existingProduct.getCategory())
-                        .imagePath(url)
-                        .isPrimary(i == 0)
-                        .build();
-                productImageRepository.save(imgEntity);
-            }
-        }
-
-        productRepository.save(existingProduct);
-
-        List<String> currentImages = productImageRepository.findByUniqueId(uniqueId)
-                .stream().map(ProductImageEntity::getImagePath).collect(Collectors.toList());
-
-        return mapToResponse(existingProduct, currentImages);
-    }
-
-    private void deleteOldImages(String uniqueId) {
-        List<ProductImageEntity> oldImages = productImageRepository.findByUniqueId(uniqueId);
-        for (ProductImageEntity img : oldImages) {
-            storageService.deleteFile(img.getImagePath());
-        }
-        productImageRepository.deleteByUniqueId(uniqueId);
-    }
-
-
 
 
     @Transactional

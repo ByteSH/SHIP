@@ -2,7 +2,6 @@ package com.connect.SHIP_ADMIN.controller;
 
 import com.connect.SHIP_ADMIN.dto.ProductDetailsResponse;
 import com.connect.SHIP_ADMIN.dto.ProductRequestDTO;
-import com.connect.SHIP_ADMIN.entity.ProductEntity;
 import com.connect.SHIP_ADMIN.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -26,12 +25,11 @@ public class ProductController {
 
     @PostMapping("/add")
     public ResponseEntity<ProductDetailsResponse> addProduct(
-            @RequestPart("product") ProductEntity product,
+            @RequestPart("product") ProductRequestDTO productDto,
             @RequestPart("images") MultipartFile[] images) throws IOException {
 
-        return ResponseEntity.ok(productService.addProduct(product, images));
+        return ResponseEntity.ok(productService.addProduct(productDto, images));
     }
-
 
     @PostMapping("/add-with-urls")
     public ResponseEntity<ProductDetailsResponse> addProductWithUrls(@RequestBody ProductRequestDTO dto) {

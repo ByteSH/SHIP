@@ -1,19 +1,32 @@
 spring:
   application:
     name: SHIP-ADMIN
+
+# Database Configuration
   datasource:
     url: jdbc:mysql://localhost:3306/${DB_NAME}
     username: ${DB_USER}
     password: ${DB_PASS}
     driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      idle-timeout: 300000
+      connection-timeout: 20000
+      max-lifetime: 1200000
+
+# JPA & Hibernate Configuration
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.MySQLDialect
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true
 
+
+# Mail Configuration
   mail:
     host: smtp.gmail.com
     port: 587
@@ -25,10 +38,25 @@ spring:
           auth: true
           starttls:
             enable: true
+  web:
+    error:
+      include-stacktrace: never
+
 
 server:
   port: ${SERVER_PORT}
+  server-header: ""
 
+
+# Logging Configuration
+logging:
+  level:
+    root: INFO
+    com.connect: DEBUG
+    org.hibernate.SQL: ERROR
+
+
+# Spring Security Configuration
 app:
   security:
     jwt:
@@ -40,6 +68,8 @@ app:
   otp:
     expiry-minutes: ${OTP_EXPIRY_MINUTES:5}
 
+
+# SUPABASE Configuration
 supabase:
   s3:
     endpoint: ${SUPABASE_S3_ENDPOINT}
