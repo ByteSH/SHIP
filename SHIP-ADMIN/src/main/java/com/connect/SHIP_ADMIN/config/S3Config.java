@@ -5,7 +5,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
-import software.amazon.awssdk.http.apache.ApacheHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3Configuration;
@@ -27,16 +26,19 @@ public class S3Config {
     @Value("${supabase.s3.region}")
     private String region;
 
-    @Bean
+    // S3Client bean for Supabase storage interaction
+    @Bean(destroyMethod = "close")
     public S3Client s3Client() {
+        // Validate credentials before building
+        AwsBasicCredentials credentials = AwsBasicCredentials.create(accessKey, secretKey);
+
         return S3Client.builder()
-                .endpointOverride(URI.create(endpoint)) // Ensure this is https://PROJECT_ID.supabase.co/storage/v1/s3
-                .region(Region.of(region)) // ap-south-1
+                .endpointOverride(URI.create(endpoint)) // Custom Supabase S3 URL
+                .region(Region.of(region)) // Cloud storage region
+                .credentialsProvider(StaticCredentialsProvider.create(credentials))
                 .serviceConfiguration(S3Configuration.builder()
-                        .pathStyleAccessEnabled(true) // Bahut zaroori hai 404 fix karne ke liye
+                        .pathStyleAccessEnabled(true) // Required for Supabase to map buckets correctly
                         .build())
-                .credentialsProvider(StaticCredentialsProvider.create(
-                        AwsBasicCredentials.create(accessKey, secretKey)))
                 .build();
     }
 }
