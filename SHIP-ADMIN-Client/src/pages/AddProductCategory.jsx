@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getCategories, addCategoryWithUrl, addCategory } from '../api/category';
+import { getProductsByCategory, addProductWithUrls, addProduct } from '../api/product';
 
 function AddProductCategory() {
     const navigate = useNavigate();
@@ -66,16 +68,13 @@ function AddProductCategory() {
         };
     }, [prodImageFiles]);
 
+    /**
+     * Fetch all categories globally
+     */
     const fetchCategories = async () => {
         try {
-            const token = localStorage.getItem('ship_admin_token');
-            const res = await fetch('/api/categories/list', {
-                headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setCategories(data || []);
-            }
+            const data = await getCategories();
+            setCategories(data || []);
         } catch (err) {
             console.error('Failed to fetch categories', err);
         }
@@ -83,20 +82,17 @@ function AddProductCategory() {
 
     // Fetch products when category selection changes in prodForm
     useEffect(() => {
+        /**
+         * Fetch products if a category is selected constraint
+         */
         const fetchProducts = async () => {
             if (!prodForm.category) {
                 setProductsForCategory([]);
                 return;
             }
             try {
-                const token = localStorage.getItem('ship_admin_token');
-                const res = await fetch(`/api/products/names/${prodForm.category}`, {
-                    headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    setProductsForCategory(data || []);
-                }
+                const data = await getProductsByCategory(prodForm.category);
+                setProductsForCategory(data || []);
             } catch (err) {
                 console.error('Failed to fetch products for validation', err);
             }
@@ -107,6 +103,9 @@ function AddProductCategory() {
     // Validation Flags
     const isCategoryDuplicate = categories.some(c => c.category && c.category.toLowerCase() === catName.trim().toLowerCase());
 
+    /**
+     * Wrapper logic to commit a new category
+     */
     const handleAddCategory = async (e) => {
         e.preventDefault();
         setCatMessage(null);
@@ -123,40 +122,17 @@ function AddProductCategory() {
         
         setIsSubmittingCat(true);
         try {
-            const token = localStorage.getItem('ship_admin_token');
-            let res;
-
             if (catImageMode === 'url') {
-                const params = new URLSearchParams();
-                params.append('category', catName.trim());
-                params.append('imageUrl', catImageUrl.trim());
-
-                res = await fetch(`/api/categories/add-with-url?${params.toString()}`, {
-                    method: 'POST',
-                    headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-                });
+                await addCategoryWithUrl(catName.trim(), catImageUrl.trim());
             } else {
-                const formData = new FormData();
-                formData.append('category', catName.trim());
-                formData.append('image', catImageFile);
-
-                res = await fetch(`/api/categories/add`, {
-                    method: 'POST',
-                    headers: token ? { 'Authorization': `Bearer ${token}` } : {}, // Missing Content-Type uses native multi-part form bounds
-                    body: formData
-                });
+                await addCategory(catName.trim(), catImageFile);
             }
 
-            if (res.ok) {
-                setCatMessage({ type: 'success', text: 'Category successfully added!' });
-                setCatName('');
-                setCatImageUrl('');
-                setCatImageFile(null);
-                // Refresh categories list
-                fetchCategories();
-            } else {
-                throw new Error('Server returned an error.');
-            }
+            setCatMessage({ type: 'success', text: 'Category successfully added!' });
+            setCatName('');
+            setCatImageUrl('');
+            setCatImageFile(null);
+            fetchCategories();
         } catch (err) {
             setCatMessage({ type: 'danger', text: 'Failed to add category. Try again.' });
         } finally {
@@ -168,6 +144,9 @@ function AddProductCategory() {
         setProdForm({ ...prodForm, [e.target.name]: e.target.value });
     };
 
+    /**
+     * Logic dispatch to commit a newly formed product registry
+     */
     const handleAddProduct = async (e) => {
         e.preventDefault();
         setProdMessage(null);
@@ -188,9 +167,6 @@ function AddProductCategory() {
 
         setIsSubmittingProd(true);
         try {
-            const token = localStorage.getItem('ship_admin_token');
-            let res;
-            
             const payloadData = {
                 category: prodForm.category,
                 subCategory: prodForm.subCategory.trim(),
@@ -205,49 +181,24 @@ function AddProductCategory() {
             if (prodImageMode === 'url') {
                 const parsedUrls = prodForm.imageUrls.split(',').map(url => url.trim()).filter(url => url);
                 payloadData.imageUrls = parsedUrls;
-
-                res = await fetch('/api/products/add-with-urls', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-                    },
-                    body: JSON.stringify(payloadData)
-                });
+                await addProductWithUrls(payloadData);
             } else {
-                const formData = new FormData();
-                const productBlob = new Blob([JSON.stringify(payloadData)], { type: 'application/json' });
-                formData.append('product', productBlob);
-
-                // Append multiple files against "images" key as required
-                for (let i = 0; i < prodImageFiles.length; i++) {
-                    formData.append('images', prodImageFiles[i]);
-                }
-
-                res = await fetch('/api/products/add', {
-                    method: 'POST',
-                    headers: token ? { 'Authorization': `Bearer ${token}` } : {}, // Native multipart boundary bounds
-                    body: formData
-                });
+                await addProduct(payloadData, prodImageFiles);
             }
 
-            if (res.ok) {
-                setProdMessage({ type: 'success', text: 'Product successfully added!' });
-                setProdForm({
-                    category: '',
-                    subCategory: '',
-                    productName: '',
-                    companyName: '',
-                    valueUnit: '',
-                    mrp: '',
-                    sellerMrp: '',
-                    purchaseMrp: '',
-                    imageUrls: ''
-                });
-                setProdImageFiles([]);
-            } else {
-                throw new Error('Failed to add product');
-            }
+            setProdMessage({ type: 'success', text: 'Product successfully added!' });
+            setProdForm({
+                category: '',
+                subCategory: '',
+                productName: '',
+                companyName: '',
+                valueUnit: '',
+                mrp: '',
+                sellerMrp: '',
+                purchaseMrp: '',
+                imageUrls: ''
+            });
+            setProdImageFiles([]);
         } catch (err) {
             setProdMessage({ type: 'danger', text: 'Failed to add product. Check your inputs.' });
         } finally {

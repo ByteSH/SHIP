@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getCategories } from '../api/category';
+import { getProductsByCategory, deleteProduct, editProduct } from '../api/product';
 
 function Product() {
     const navigate = useNavigate();
@@ -20,16 +22,14 @@ function Product() {
     const [editForm, setEditForm] = useState(null);
     const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
 
+    /**
+     * Initializes categories natively from the global source
+     */
     useEffect(() => {
         const fetchCategories = async () => {
             try {
-                const token = localStorage.getItem('ship_admin_token');
-                const res = await fetch('/api/categories/list', {
-                    headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-                });
-                if (!res.ok) throw new Error('Failed to fetch categories');
-                const data = await res.json();
-                setCategories(data);
+                const data = await getCategories();
+                setCategories(data || []);
                 if (data && data.length > 0) setSelectedCategory(data[0].category);
             } catch (err) {
                 console.error(err);
@@ -39,6 +39,9 @@ function Product() {
         fetchCategories();
     }, []);
 
+    /**
+     * Retrieves products associated with a specific category
+     */
     const handleFetchProduct = async (e) => {
         if (e) e.preventDefault();
         if (!selectedCategory) return;
@@ -49,12 +52,7 @@ function Product() {
         setSortConfig({ key: null, direction: 'ascending' });
 
         try {
-            const token = localStorage.getItem('ship_admin_token');
-            const res = await fetch(`/api/products/names/${selectedCategory}`, {
-                headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-            });
-            if (!res.ok) throw new Error('Failed to fetch product');
-            const data = await res.json();
+            const data = await getProductsByCategory(selectedCategory);
 
             if (data && data.length > 0) {
                 setFetchedProducts(data);
@@ -69,6 +67,9 @@ function Product() {
         }
     };
 
+    /**
+     * Dispatches delete logic against a singular product utilizing unique identifier
+     */
     const handleDeleteProduct = async (uniqueId) => {
         if (!window.confirm(`Are you certain you wish to completely delete this product? (ID: ${uniqueId})`)) {
             return;
@@ -78,18 +79,8 @@ function Product() {
         setErrorMsg('');
         
         try {
-            const token = localStorage.getItem('ship_admin_token');
-            const res = await fetch(`/api/products/delete/${uniqueId}`, {
-                method: 'DELETE',
-                headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-            });
-
-            if (res.ok) {
-                // Delete succeeded, remove the product instantly without a full API refresh
-                setFetchedProducts(prev => prev.filter(p => p.uniqueId !== uniqueId));
-            } else {
-                setErrorMsg('Failed to delete the selected product.');
-            }
+            await deleteProduct(uniqueId);
+            setFetchedProducts(prev => prev.filter(p => p.uniqueId !== uniqueId));
         } catch (err) {
             console.error('Error deleting product details:', err);
             setErrorMsg('System error encountered while deleting product.');
@@ -191,12 +182,14 @@ function Product() {
         setCurrentImageIndex(0);
     }
 
+    /**
+     * Maps product modifications and submits PUT command securely payloaded to backend
+     */
     const handleUpdateProduct = async (e) => {
         e.preventDefault();
         
         setIsSubmittingEdit(true);
         try {
-            const token = localStorage.getItem('ship_admin_token');
             const uniqueId = editForm.uniqueId;
             const payloadData = {
                 uniqueId: uniqueId,
@@ -211,24 +204,12 @@ function Product() {
                 imageUrls: editForm.imageUrls ? editForm.imageUrls.split(',').map(u => u.trim()).filter(Boolean) : []
             };
 
-            const res = await fetch(`/api/products/edit/${uniqueId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-                },
-                body: JSON.stringify(payloadData)
-            });
-
-            if (res.ok) {
-                const updatedProd = await res.json();
-                setFetchedProducts(prev => prev.map(p => p.uniqueId === uniqueId ? updatedProd : p));
-                setSelectedProductDetails(updatedProd);
-                setIsEditingMode(false);
-                setCurrentImageIndex(0);
-            } else {
-                alert('Backend rejected the modification.');
-            }
+            const updatedProd = await editProduct(uniqueId, payloadData);
+            
+            setFetchedProducts(prev => prev.map(p => p.uniqueId === uniqueId ? updatedProd : p));
+            setSelectedProductDetails(updatedProd);
+            setIsEditingMode(false);
+            setCurrentImageIndex(0);
         } catch(err) {
            console.error(err);
            alert('Failed to transmit form payload.');

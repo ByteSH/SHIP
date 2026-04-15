@@ -44,7 +44,7 @@ const Dashboard = () => {
 
       <div className="d-flex flex-column flex-md-row flex-grow-1 overflow-hidden gap-3 pb-2 w-100">
         {/* Left Operations Sidebar */}
-        <div className="col-12 col-md-5 col-lg-4 p-0 h-md-100">
+        <div className="col-12 col-md-5 col-lg-3 p-0 h-md-100">
           <div
             className="p-4 d-flex flex-column h-100 overflow-auto"
             style={{
@@ -59,7 +59,7 @@ const Dashboard = () => {
             {/* Operations Grid Area */}
             <div className="row g-3 mb-4">
               {/* Manage Users Button */}
-              <div className="col-4">
+              <div className="col-6">
                 <div
                   className="d-flex flex-column align-items-center justify-content-center w-100"
                   style={{
@@ -84,7 +84,7 @@ const Dashboard = () => {
               </div>
 
               {/* Get Product Button */}
-              <div className="col-4">
+              <div className="col-6">
                 <div
                   className="d-flex flex-column align-items-center justify-content-center w-100"
                   style={{
@@ -108,7 +108,7 @@ const Dashboard = () => {
                 </div>
               </div>
               {/* Manage Category Button */}
-              <div className="col-4">
+              <div className="col-6">
                 <div
                   className="d-flex flex-column align-items-center justify-content-center w-100"
                   style={{

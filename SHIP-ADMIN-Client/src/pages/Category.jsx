@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import {
+    getCategories,
+    addCategoryWithUrl,
+    addCategory,
+    editCategory,
+    deleteCategory
+} from '../api/category';
 
 const Category = () => {
     const navigate = useNavigate();
@@ -21,20 +28,15 @@ const Category = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [modalErrorMsg, setModalErrorMsg] = useState('');
 
+    /**
+     * Loads categories from the backend server
+     */
     const loadCategories = async () => {
         setIsFetching(true);
         setPageErrorMsg('');
         try {
-            const token = localStorage.getItem('ship_admin_token');
-            const res = await fetch('/api/categories/list', {
-                headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setCategories(data || []);
-            } else {
-                throw new Error('Failed to fetch categories');
-            }
+            const data = await getCategories();
+            setCategories(data || []);
         } catch (err) {
             setPageErrorMsg(err.message || 'Error fetching categories list.');
             setCategories([]);
@@ -75,37 +77,21 @@ const Category = () => {
         setModalErrorMsg('');
     };
 
+    /**
+     * Handles adding a new category
+     */
     const handleSubmitCreate = async (e) => {
         e.preventDefault();
         setIsSubmitting(true);
         setModalErrorMsg('');
         try {
-            const token = localStorage.getItem('ship_admin_token');
             const catName = formData.name.trim();
             
-            let res;
             if (imageMode === 'url') {
-                const imgUrl = encodeURIComponent(formData.imageUrl.trim());
-                res = await fetch(`/api/categories/add-with-url?category=${encodeURIComponent(catName)}&imageUrl=${imgUrl}`, {
-                    method: 'POST',
-                    headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-                });
+                await addCategoryWithUrl(catName, formData.imageUrl.trim());
             } else {
                 if (!imageFile) throw new Error("Please select an image file.");
-                const fd = new FormData();
-                fd.append('category', catName);
-                fd.append('image', imageFile);
-                
-                res = await fetch('/api/categories/add', {
-                    method: 'POST',
-                    headers: token ? { 'Authorization': `Bearer ${token}` } : {},
-                    body: fd
-                });
-            }
-
-            if (!res.ok) {
-                const errTxt = await res.text();
-                throw new Error(errTxt || 'Error creating category');
+                await addCategory(catName, imageFile);
             }
 
             setPageSuccessMsg(`Category '${catName}' created successfully!`);
@@ -118,25 +104,15 @@ const Category = () => {
         }
     };
 
+    /**
+     * Handles updating an existing category
+     */
     const handleSubmitEdit = async (e) => {
         e.preventDefault();
         setIsSubmitting(true);
         setModalErrorMsg('');
         try {
-            const token = localStorage.getItem('ship_admin_token');
-            const newName = encodeURIComponent(formData.name.trim());
-            const newUrl = encodeURIComponent(formData.imageUrl.trim());
-            const oldName = encodeURIComponent(selectedCategory.category);
-
-            const res = await fetch(`/api/categories/edit/${oldName}?newCategoryName=${newName}&newImageUrl=${newUrl}`, {
-                method: 'PUT',
-                headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-            });
-
-            if (!res.ok) {
-                const errTxt = await res.text();
-                throw new Error(errTxt || 'Error updating category');
-            }
+            await editCategory(selectedCategory.category, formData.name.trim(), formData.imageUrl.trim());
 
             setPageSuccessMsg(`Category updated successfully!`);
             setActiveModal(null);
@@ -148,21 +124,13 @@ const Category = () => {
         }
     };
 
+    /**
+     * Handles deleting an existing category confirmation
+     */
     const handleDeleteCategory = async (cat) => {
         if (window.confirm(`Are you extremely sure you want to permanently delete Category: "${cat.category}" and ALL its linked constraints?`)) {
             try {
-                const token = localStorage.getItem('ship_admin_token');
-                const catName = encodeURIComponent(cat.category);
-                const res = await fetch(`/api/categories/delete/${catName}`, {
-                    method: 'DELETE',
-                    headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-                });
-
-                if (!res.ok) {
-                    const errTxt = await res.text();
-                    throw new Error(errTxt || 'Failed to delete category');
-                }
-
+                await deleteCategory(cat.category);
                 setPageSuccessMsg(`Category '${cat.category}' deleted successfully.`);
                 setCategories(prev => prev.filter(c => c.category !== cat.category));
             } catch (err) {

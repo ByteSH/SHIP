@@ -6,6 +6,10 @@ import Product from "./pages/Product";
 import Category from "./pages/Category";
 import AddProductCategory from "./pages/AddProductCategory";
 
+/**
+ * Main application routing configuration
+ * Establishes navigational flow between authentication, dashboard, and management modules.
+ */
 function App() {
   return (
     <Router>
