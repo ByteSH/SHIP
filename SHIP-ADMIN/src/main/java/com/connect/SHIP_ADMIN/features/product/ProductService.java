@@ -16,6 +16,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Service class for managing products and their associated images.
+ */
 @Service
 @RequiredArgsConstructor
 public class ProductService {
@@ -24,6 +27,9 @@ public class ProductService {
     private final ProductImageRepository productImageRepository;
     private final SupabaseStorageService storageService;
 
+    /**
+     * Retrieves all products for a specific category along with their associated images.
+     */
     public List<ProductResponse> getAllProductsService(String category) {
         List<Product> products = productRepository.findByCategory(category);
 
@@ -37,6 +43,9 @@ public class ProductService {
         }).collect(Collectors.toList());
     }
 
+    /**
+     * Generates a precise, unique identifier for a product based on its primary attributes.
+     */
     private String generateUniqueId(String companyName, String productName, String valueUnit, Integer mrp) {
         String cleanCompany = cleanString(companyName);
         String cleanProduct = cleanString(productName);
@@ -50,6 +59,9 @@ public class ProductService {
                 .toUpperCase();
     }
 
+    /**
+     * Cleans up string inputs for uniform ID generation and formatting.
+     */
     private String cleanString(String input) {
         if (input == null) return "";
         return input.trim()
@@ -57,6 +69,9 @@ public class ProductService {
                 .replaceAll("\\s+", "_");
     }
 
+    /**
+     * Adds a new product and uploads the provided image files to the storage backend.
+     */
     @Transactional
     public ProductResponse addProduct(ProductRequest dto, MultipartFile[] images) throws IOException {
 
@@ -102,6 +117,9 @@ public class ProductService {
 
 
 
+    /**
+     * Adds a new product using predefined image URLs instead of processing direct file uploads.
+     */
     @Transactional
     public ProductResponse addProductWithUrls(ProductRequest dto) {
 
@@ -137,6 +155,9 @@ public class ProductService {
         return mapToResponse(savedProduct, dto.getImageUrls());
     }
 
+    /**
+     * Helper mapping method to convert a Product entity and image links into a standard ProductResponse.
+     */
     private ProductResponse mapToResponse(Product product, List<String> images) {
         return ProductResponse.builder()
                 .uniqueId(product.getUniqueId())
@@ -153,6 +174,9 @@ public class ProductService {
     }
 
 
+    /**
+     * Deletes a product entirely, including physically removing its images from the storage provider.
+     */
     @Transactional
     public void deleteProductByUniqueId(String uniqueId) {
         List<ProductImage> images = productImageRepository.findByUniqueId(uniqueId);
@@ -169,6 +193,9 @@ public class ProductService {
     }
 
 
+    /**
+     * Updates an existing product using external image URLs rather than uploads.
+     */
     @Transactional
     public ProductResponse updateProductWithUrls(String uniqueId, ProductRequest dto) {
         Product existingProduct = productRepository.findByUniqueId(uniqueId)

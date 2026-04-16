@@ -1,5 +1,9 @@
 package com.connect.SHIP_ADMIN.features.admin;
 
+import com.connect.SHIP_ADMIN.core.exception.EmailExistsException;
+import com.connect.SHIP_ADMIN.core.exception.InvalidStatusException;
+import com.connect.SHIP_ADMIN.core.exception.UserNotFoundException;
+import com.connect.SHIP_ADMIN.core.exception.UsernameExistsException;
 import com.connect.SHIP_ADMIN.features.admin.dto.AdminUserUpdateRequest;
 import com.connect.SHIP_ADMIN.features.admin.dto.AdminUserRequest;
 import com.connect.SHIP_ADMIN.features.admin.dto.AdminUserResponse;
@@ -11,6 +15,10 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Service class for managing admin user accounts including creation, 
+ * modification, retrieval, and deletion.
+ */
 @Service
 @RequiredArgsConstructor
 public class AdminUserService {
@@ -18,15 +26,18 @@ public class AdminUserService {
     private final AdminUserRepository adminUserRepository;
     private final PasswordEncoder passwordEncoder;
 
+    /**
+     * Creates a new admin user after validating uniqueness of username and email.
+     */
     public AdminUserResponse createAdminUser(AdminUserRequest request) {
 
         if (adminUserRepository.existsByUsername(request.getUsername())) {
-            throw new RuntimeException("USERNAME_EXISTS");
+            throw new UsernameExistsException();
         }
 
         if (request.getEmail() != null && !request.getEmail().isBlank()
                 && adminUserRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("EMAIL_EXISTS");
+            throw new EmailExistsException();
         }
 
         AdminUser entity = AdminUser.builder()
@@ -42,16 +53,20 @@ public class AdminUserService {
         return mapToResponse(saved);
     }
 
+    /**
+     * Updates an existing admin user's details, including status transitions.
+     */
+    @Transactional
     public AdminUserResponse updateAdminUser(String username, AdminUserUpdateRequest request) {
 
         AdminUser entity = adminUserRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("USER_NOT_FOUND"));
+                .orElseThrow(() -> new UserNotFoundException());
 
         // Email update
         if (request.getEmail() != null && !request.getEmail().isBlank()) {
             if (!request.getEmail().equals(entity.getEmail())
                     && adminUserRepository.existsByEmail(request.getEmail())) {
-                throw new RuntimeException("EMAIL_EXISTS");
+                throw new EmailExistsException();
             }
             entity.setEmail(request.getEmail());
         }
@@ -71,7 +86,7 @@ public class AdminUserService {
             entity.setPasswordExpiry(request.getPasswordExpiry());
         }
 
-// Status logic
+        // Update user status and handle status transition rules
         if (request.getStatus() != null && !request.getStatus().isBlank()) {
             String newStatus = request.getStatus().toUpperCase();
             String currentStatus = entity.getStatus().toUpperCase();
@@ -79,7 +94,7 @@ public class AdminUserService {
             switch (newStatus) {
 
                 case "ACTIVE" -> {
-                    // LOCKED → ACTIVE
+                    // Handle transition from LOCKED to ACTIVE
                     if ("LOCKED".equals(currentStatus)) {
                         if (entity.getPasswordExpiry() != null
                                 && entity.getPasswordExpiry().isBefore(LocalDateTime.now())) {
@@ -90,14 +105,14 @@ public class AdminUserService {
                         entity.setLockTime(null);
                         entity.setFailedAttempts(0);
                     }
-                    // EXPIRED → ACTIVE
+                    // Handle transition from EXPIRED to ACTIVE
                     else if ("EXPIRED".equals(currentStatus)) {
                         entity.setStatus("ACTIVE");
                         entity.setPasswordExpiry(LocalDateTime.now().plusMonths(1));
                         entity.setFailedAttempts(0);
                         entity.setLockTime(null);
                     }
-                    // BLOCKED → ACTIVE ya koi aur → ACTIVE
+                    // Handle transition from BLOCKED or other statuses to ACTIVE
                     else {
                         entity.setStatus("ACTIVE");
                     }
@@ -117,7 +132,7 @@ public class AdminUserService {
                     entity.setStatus("BLOCKED");
                 }
 
-                default -> throw new RuntimeException("INVALID_STATUS");
+                default -> throw new InvalidStatusException();
             }
         }
 
@@ -125,15 +140,21 @@ public class AdminUserService {
         return mapToResponse(saved);
     }
 
+    /**
+     * Retrieves all admin users.
+     */
     public List<AdminUserResponse> getAllAdminUsers() {
         return adminUserRepository.findAll().stream()
                 .map(this::mapToResponse)
                 .toList();
     }
 
+    /**
+     * Retrieves a specific admin user by username.
+     */
     public AdminUserResponse getAdminUser(String username) {
         AdminUser entity = adminUserRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("USER_NOT_FOUND"));
+                .orElseThrow(() -> new UserNotFoundException());
         return mapToResponse(entity);
     }
 
@@ -154,14 +175,17 @@ public class AdminUserService {
     }
 
 
+    /**
+     * Deletes an admin user by username if they exist.
+     */
     @Transactional
     public void deleteAdminUser(String username) {
-        // 1. Check karein ki user exist karta hai ya nahi
+        // Verify user exists before deletion
         if (!adminUserRepository.existsByUsername(username)) {
-            throw new RuntimeException("Admin user not found with username: " + username);
+            throw new UserNotFoundException("Admin user not found with username: " + username);
         }
 
-        // 2. Delete karein
+        // Perform deletion
         adminUserRepository.deleteByUsername(username);
     }
 }

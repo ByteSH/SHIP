@@ -6,6 +6,9 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 
+/**
+ * Entity representing an audit log entry for security and tracking events.
+ */
 @Entity
 @Table(name = "audit_logs")
 @Getter
@@ -23,10 +26,10 @@ public class AuditLogEntity {
     private String username;
 
     @Column(nullable = false, length = 30)
-    private String action;  // REQUEST_OTP, LOGIN_SUCCESS, LOGIN_FAILED
+    private String action;
 
     @Column(nullable = false, length = 50)
-    private String status;  // SUCCESS, FAILED_CREDENTIALS, FAILED_OTP, FAILED_MAX_ATTEMPTS
+    private String status;
 
     @Column(name = "ip_address", length = 50)
     private String ipAddress;

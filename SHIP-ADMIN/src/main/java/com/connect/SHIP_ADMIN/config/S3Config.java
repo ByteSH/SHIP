@@ -11,6 +11,9 @@ import software.amazon.awssdk.services.s3.S3Configuration;
 
 import java.net.URI;
 
+/**
+ * Configuration class for setting up the S3 client to interact with Supabase storage.
+ */
 @Configuration
 public class S3Config {
 
@@ -26,18 +29,19 @@ public class S3Config {
     @Value("${supabase.s3.region}")
     private String region;
 
-    // S3Client bean for Supabase storage interaction
+    /**
+     * Creates and configures the S3Client bean with Supabase-specific settings.
+     */
     @Bean(destroyMethod = "close")
     public S3Client s3Client() {
-        // Validate credentials before building
         AwsBasicCredentials credentials = AwsBasicCredentials.create(accessKey, secretKey);
 
         return S3Client.builder()
-                .endpointOverride(URI.create(endpoint)) // Custom Supabase S3 URL
-                .region(Region.of(region)) // Cloud storage region
+                .endpointOverride(URI.create(endpoint))
+                .region(Region.of(region))
                 .credentialsProvider(StaticCredentialsProvider.create(credentials))
                 .serviceConfiguration(S3Configuration.builder()
-                        .pathStyleAccessEnabled(true) // Required for Supabase to map buckets correctly
+                        .pathStyleAccessEnabled(true)
                         .build())
                 .build();
     }

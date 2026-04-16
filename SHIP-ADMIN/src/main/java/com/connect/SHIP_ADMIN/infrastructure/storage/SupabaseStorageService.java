@@ -12,6 +12,9 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import java.io.IOException;
 import java.util.UUID;
 
+/**
+ * Service class handling file uploads and deletions via Supabase S3 API.
+ */
 @Service
 @RequiredArgsConstructor
 public class SupabaseStorageService {
@@ -24,25 +27,27 @@ public class SupabaseStorageService {
     @Value("${supabase.s3.endpoint}")
     private String endpoint;
 
-    // Uploads file to Supabase and returns the public access URL
+    /**
+     * Uploads a file to Supabase storage and returns its publicly accessible URL.
+     */
     public String uploadFile(MultipartFile file, String folder) throws IOException {
         String fileName = folder + "/" + UUID.randomUUID() + "_" + file.getOriginalFilename();
 
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(bucketName)
                 .key(fileName)
-                .contentType(file.getContentType()) // Important for browser preview
+                .contentType(file.getContentType())
                 .build();
 
         s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
 
-        // Construct URL dynamically using endpoint and bucket name
         return String.format("%s/object/public/%s/%s", endpoint, bucketName, fileName);
     }
 
-    // Deletes file from storage using its public URL
+    /**
+     * Deletes a file from Supabase storage using its generated public URL.
+     */
     public void deleteFile(String publicUrl) {
-        // Extract key by removing the public base path
         String searchPattern = "/public/" + bucketName + "/";
         int index = publicUrl.indexOf(searchPattern);
 

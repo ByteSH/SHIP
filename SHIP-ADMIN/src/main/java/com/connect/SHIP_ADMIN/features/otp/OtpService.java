@@ -15,6 +15,9 @@ import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
+/**
+ * Service class for generating, securely hashing, and validating One Time Passwords (OTPs).
+ */
 @Service
 @RequiredArgsConstructor
 public class OtpService {
@@ -27,6 +30,10 @@ public class OtpService {
     private int otpExpiryMinutes;
 
 
+    /**
+     * Generates a new OTP, hashes it, stores it, and sends it via email.
+     * Replaces any existing OTP for the user.
+     */
     @Transactional
     public void generateAndSendOtp(String username, String email) {
         otpRepository.deleteByUsername(username);
@@ -52,6 +59,10 @@ public class OtpService {
     }
 
 
+    /**
+     * Validates a provided OTP against the securely stored hash.
+     * Enforces expiry times and limits maximum failed attempts.
+     */
     @Transactional
     public void validateOtp(String username, String otp) {
         Optional<OtpEntity> otpEntityOpt = otpRepository.findByUsername(username);
@@ -82,6 +93,9 @@ public class OtpService {
     }
 
 
+    /**
+     * Generates a random 6-digit number as an OTP string.
+     */
     private String generateOtp() {
         SecureRandom random = new SecureRandom();
         int otp = 100000 + random.nextInt(900000);

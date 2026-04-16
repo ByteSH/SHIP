@@ -15,6 +15,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Service class for handling login authentication and OTP issuance.
+ */
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -32,6 +35,9 @@ public class AuthService {
     private final OtpService otpService;
     private final AuditLogService auditLogService;
 
+    /**
+     * Validates credentials and initiates the OTP sending process.
+     */
     public void requestOtp(AuthRequest request, String ipAddress) {
         try {
             validateCredentials(request.getUsername(), request.getPassword());
@@ -45,6 +51,10 @@ public class AuthService {
         }
     }
 
+    /**
+     * Verifies both the user credentials and the provided OTP.
+     * Returns a JWT token upon successful authentication.
+     */
     @Transactional
     public AuthResponse verifyOtpAndLogin(OtpVerifyRequest request, String ipAddress) {
         try {
@@ -77,6 +87,9 @@ public class AuthService {
         return new AuthResponse(token, request.getUsername());
     }
 
+    /**
+     * Checks if the username and password match the configured admin credentials.
+     */
     private void validateCredentials(String username, String password) {
         if (!adminUsername.equals(username) || !adminPassword.equals(password)) {
             throw new InvalidCredentialsException();

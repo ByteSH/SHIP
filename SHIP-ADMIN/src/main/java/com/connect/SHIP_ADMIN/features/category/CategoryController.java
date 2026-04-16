@@ -8,6 +8,9 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.List;
 
+/**
+ * REST controller for managing product categories and associated images.
+ */
 @RestController
 @RequestMapping("/api/categories")
 @RequiredArgsConstructor
@@ -15,11 +18,17 @@ public class CategoryController {
 
     private final CategoryService categoryService;
 
+    /**
+     * Endpoint to fetch the complete list of all categories.
+     */
     @GetMapping("/list")
     public ResponseEntity<List<CategoryImageResponse>> getCategories() {
         return ResponseEntity.ok(categoryService.getAllCategories());
     }
 
+    /**
+     * Endpoint to create a new category via an image file upload.
+     */
     @PostMapping("/add")
     public ResponseEntity<CategoryImageResponse> addCategory(
             @RequestParam("category") String category,
@@ -30,6 +39,9 @@ public class CategoryController {
     }
 
 
+    /**
+     * Endpoint to create a new category using a provided image URL.
+     */
     @PostMapping("/add-with-url")
     public ResponseEntity<CategoryImageResponse> addCategoryWithUrl(
             @RequestParam String category,
@@ -38,6 +50,9 @@ public class CategoryController {
     }
 
 
+    /**
+     * Endpoint to modify the name and image URL of an existing category.
+     */
     @PutMapping("/edit/{oldName}")
     public ResponseEntity<CategoryImageResponse> updateCategory(
             @PathVariable String oldName,
@@ -47,6 +62,9 @@ public class CategoryController {
         return ResponseEntity.ok(categoryService.updateCategory(oldName, newCategoryName, newImageUrl));
     }
 
+    /**
+     * Endpoint to delete a specific category by its name.
+     */
     @DeleteMapping("/delete/{categoryName}")
     public ResponseEntity<String> deleteCategory(@PathVariable String categoryName) {
         categoryService.deleteCategory(categoryName);

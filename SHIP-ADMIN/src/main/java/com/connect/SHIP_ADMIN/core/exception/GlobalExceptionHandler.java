@@ -53,20 +53,28 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.BAD_REQUEST, "Validation Failed", message);
     }
 
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<ErrorResponse> handleRuntime(RuntimeException ex) {
-        return switch (ex.getMessage()) {
-            case "USERNAME_EXISTS" ->
-                    build(HttpStatus.CONFLICT, "Conflict", "Username already exists.");
-            case "EMAIL_EXISTS" ->
-                    build(HttpStatus.CONFLICT, "Conflict", "Email already registered.");
-            case "USER_NOT_FOUND" ->
-                    build(HttpStatus.NOT_FOUND, "Not Found", "User not found.");
-            case "INVALID_STATUS" ->
-                    build(HttpStatus.BAD_REQUEST, "Bad Request",
-                            "Invalid status. Allowed: ACTIVE, LOCKED, EXPIRED, BLOCKED.");
-            default ->
-                    build(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", "Something went wrong.");
-        };
+    @ExceptionHandler(UsernameExistsException.class)
+    public ResponseEntity<ErrorResponse> handleUsernameExists(UsernameExistsException ex) {
+        return build(HttpStatus.CONFLICT, "Conflict", ex.getMessage());
+    }
+
+    @ExceptionHandler(EmailExistsException.class)
+    public ResponseEntity<ErrorResponse> handleEmailExists(EmailExistsException ex) {
+        return build(HttpStatus.CONFLICT, "Conflict", ex.getMessage());
+    }
+
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleUserNotFound(UserNotFoundException ex) {
+        return build(HttpStatus.NOT_FOUND, "Not Found", ex.getMessage());
+    }
+
+    @ExceptionHandler(InvalidStatusException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidStatus(InvalidStatusException ex) {
+        return build(HttpStatus.BAD_REQUEST, "Bad Request", ex.getMessage());
+    }
+
+    @ExceptionHandler(CategoryNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleCategoryNotFound(CategoryNotFoundException ex) {
+        return build(HttpStatus.NOT_FOUND, "Not Found", ex.getMessage());
     }
 }

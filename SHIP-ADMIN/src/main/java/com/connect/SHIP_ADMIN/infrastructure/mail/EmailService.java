@@ -8,6 +8,9 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
+/**
+ * Service class for constructing and sending HTML-formatted emails (e.g., OTPs).
+ */
 @Service
 @RequiredArgsConstructor
 public class EmailService {
@@ -17,6 +20,9 @@ public class EmailService {
     @Value("${spring.mail.username}")
     private String fromEmail;
 
+    /**
+     * Sends an HTML-formatted OTP verification email to the given address.
+     */
     public void sendOtpEmail(String toEmail, String otp) throws MessagingException {
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
@@ -24,11 +30,14 @@ public class EmailService {
         helper.setFrom(fromEmail);
         helper.setTo(toEmail);
         helper.setSubject("🔐 SHIP Admin - Your Login OTP");
-        helper.setText(buildEmailBody(otp), true); // true = HTML
+        helper.setText(buildEmailBody(otp), true);
 
         mailSender.send(message);
     }
 
+    /**
+     * Generates the HTML template for the OTP email.
+     */
     private String buildEmailBody(String otp) {
         return """
                 <!DOCTYPE html>
